@@ -1,11 +1,15 @@
 // RGBA/HEX カラーコード変換拡張機能
 // Panic Nova用
 
+// 共通の正規表現パターン
+const HEX_PERCENT_PATTERN = /^#?([a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%$/i;
+const HEX_PERCENT_PATTERN_GLOBAL = /(#?[a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%/gi;
+
 // HEX+パーセント形式をRGBAに変換する関数（#ff0000-50% → rgba(255, 0, 0, 0.5)）
 // 対応形式: #ff0000-50%, #ff0000 50%, #ff0000,50%, #ff0000 - 50%, #ff0000 , 50%
 function hexPercentToRgba(hexPercentStr) {
     // HEX+パーセント形式の正規表現パターン（-、スペース、カンマ区切りに対応）
-    const hexPercentPattern = /^#?([a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%$/i;
+    const hexPercentPattern = HEX_PERCENT_PATTERN;
     const match = hexPercentStr.match(hexPercentPattern);
     
     if (!match) {
@@ -43,7 +47,7 @@ function extractColorCodes(text) {
     const processed = new Set(); // 処理済み位置を記録
     
     // 1. HEX+パーセント形式を最初に検索（最も具体的）
-    const hexPercentPattern = /(#?[a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%/gi;
+    const hexPercentPattern = HEX_PERCENT_PATTERN_GLOBAL;
     let match;
     while ((match = hexPercentPattern.exec(text)) !== null) {
         const startPos = match.index;
@@ -90,8 +94,8 @@ function extractColorCodes(text) {
         }
     }
     
-    // 3. 単独のHEX形式を検索（最後）
-    const hexPattern = /#?[a-f\d]{3}(?:[a-f\d]{3})?(?:[a-f\d]{2})?/gi;
+    // 3. 単独のHEX形式を検索（最後）- #必須
+    const hexPattern = /#[a-f\d]{3}(?:[a-f\d]{3})?(?:[a-f\d]{2})?(?![a-f\d])/gi;
     while ((match = hexPattern.exec(text)) !== null) {
         const startPos = match.index;
         const endPos = startPos + match[0].length;
@@ -122,39 +126,6 @@ function extractColorCodes(text) {
     
     // インデックス順にソート
     return foundColors.sort((a, b) => a.index - b.index);
-}
-
-// カラーコードを変換して置換する関数（複数対応）
-function convertAndReplaceColors(text, converter) {
-    const colorCodes = extractColorCodes(text);
-    
-    if (colorCodes.length === 0) {
-        return null;
-    }
-    
-    let result = text;
-    
-    // 前から処理し、位置を再計算
-    let offset = 0;
-    for (let i = 0; i < colorCodes.length; i++) {
-        const color = colorCodes[i];
-        const actualIndex = color.index + offset;
-        const actualText = result.substring(actualIndex, actualIndex + color.length);
-        
-        // 実際のテキストがまだ変換されていないことを確認
-        if (actualText === color.text) {
-            const convertedColor = converter(color.text);
-            
-            if (convertedColor && convertedColor !== color.text) {
-                const before = result.substring(0, actualIndex);
-                const after = result.substring(actualIndex + color.length);
-                result = before + convertedColor + after;
-                offset += convertedColor.length - color.length;
-            }
-        }
-    }
-    
-    return result === text ? null : result;
 }
 
 // RGBAをHEXに変換する関数
@@ -258,24 +229,29 @@ function autoConvertColor(colorStr) {
 // 複数カラーコードの使用量を分析して、最適な変換方向を決定
 function analyzeColorUsage(colorCodes) {
     let hexCount = 0;
-    let rgbaCount = 0;
+    let rgbCount = 0;  // RGB（透明度なし）
+    let rgbaCount = 0; // RGBA（透明度あり）
     let hexPercentCount = 0;
     
     colorCodes.forEach(color => {
-        if (/^#?[a-f\d]{3,6}\s*[-,\s]\s*\d+%$/i.test(color.text)) {
+        if (HEX_PERCENT_PATTERN.test(color.text)) {
             hexPercentCount++;
-        } else if (/rgba?\s*\(/i.test(color.text)) {
+        } else if (/rgba\s*\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[\d.]+\s*\)/i.test(color.text)) {
+            // RGBA（透明度あり）
             rgbaCount++;
-        } else if (/^#?[a-f\d]{3,8}$/i.test(color.text)) {
+        } else if (/rgb\s*\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)/i.test(color.text)) {
+            // RGB（透明度なし）- HEXとして扱う
+            rgbCount++;
+        } else if (/^#[a-f\d]{3}(?:[a-f\d]{3})?(?:[a-f\d]{2})?$/i.test(color.text)) {
             hexCount++;
         }
     });
     
-    // HEX+パーセント形式はHEXとしてカウント
-    const totalHex = hexCount + hexPercentCount;
+    // HEX+パーセント形式とRGBはHEXとしてカウント
+    const totalHex = hexCount + hexPercentCount + rgbCount;
     const totalRgba = rgbaCount;
     
-    console.log(`カラー形式分析: HEX=${totalHex}, RGBA=${totalRgba}, HEX+パーセント=${hexPercentCount}`);
+    console.log(`カラー形式分析: HEX=${hexCount}, RGB=${rgbCount}, RGBA=${rgbaCount}, HEX+パーセント=${hexPercentCount}, 合計HEX=${totalHex}`);
     
     // 使用量が多い形式に統一する
     if (totalHex > totalRgba) {
@@ -335,7 +311,7 @@ function smartAutoConvertColors(text) {
     if (conversionDirection === 'to-rgba') {
         // RGBAに統一する場合
         converter = (colorStr) => {
-            if (/^#?[a-f\d]{3,6}\s*[-,\s]\s*\d+%$/i.test(colorStr)) {
+            if (HEX_PERCENT_PATTERN.test(colorStr)) {
                 // HEX+パーセント → RGBA
                 return hexPercentToRgba(colorStr);
             } else if (/^#?[a-f\d]{3,8}$/i.test(colorStr)) {
@@ -347,7 +323,7 @@ function smartAutoConvertColors(text) {
     } else {
         // HEXに統一する場合
         converter = (colorStr) => {
-            if (/^#?[a-f\d]{3,6}\s*[-,\s]\s*\d+%$/i.test(colorStr)) {
+            if (HEX_PERCENT_PATTERN.test(colorStr)) {
                 // HEX+パーセント → 一旦RGBA → HEX
                 const rgbaResult = hexPercentToRgba(colorStr);
                 if (rgbaResult) {
