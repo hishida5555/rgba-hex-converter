@@ -95,7 +95,7 @@ function extractColorCodes(text) {
     }
     
     // 3. 単独のHEX形式を検索（最後）- #必須
-    const hexPattern = /#[a-f\d]{3}(?:[a-f\d]{3})?(?:[a-f\d]{2})?(?![a-f\d])/gi;
+    const hexPattern = /#(?:[a-f\d]{8}|[a-f\d]{6}|[a-f\d]{4}|[a-f\d]{3})(?![a-f\d])/gi;
     while ((match = hexPattern.exec(text)) !== null) {
         const startPos = match.index;
         const endPos = startPos + match[0].length;
@@ -219,7 +219,7 @@ function autoConvertColor(colorStr) {
         return rgbaToHex(trimmed);
     }
     
-    if (/^#[a-f\d]{3}(?:[a-f\d]{3})?(?:[a-f\d]{2})?$/i.test(trimmed)) {
+    if (/^#(?:[a-f\d]{8}|[a-f\d]{6}|[a-f\d]{4}|[a-f\d]{3})$/i.test(trimmed)) {
         return hexToRgba(trimmed);
     }
     
@@ -242,7 +242,7 @@ function analyzeColorUsage(colorCodes) {
         } else if (/rgb\s*\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)/i.test(color.text)) {
             // RGB（透明度なし）- HEXとして扱う
             rgbCount++;
-        } else if (/^#[a-f\d]{3}(?:[a-f\d]{3})?(?:[a-f\d]{2})?$/i.test(color.text)) {
+        } else if (/^#(?:[a-f\d]{8}|[a-f\d]{6}|[a-f\d]{4}|[a-f\d]{3})$/i.test(color.text)) {
             hexCount++;
         }
     });
@@ -314,7 +314,7 @@ function smartAutoConvertColors(text) {
             if (HEX_PERCENT_PATTERN.test(colorStr)) {
                 // HEX+パーセント → RGBA
                 return hexPercentToRgba(colorStr);
-            } else if (/^#[a-f\d]{3}(?:[a-f\d]{3})?(?:[a-f\d]{2})?$/i.test(colorStr)) {
+            } else if (/^#(?:[a-f\d]{8}|[a-f\d]{6}|[a-f\d]{4}|[a-f\d]{3})$/i.test(colorStr)) {
                 // HEX → RGBA
                 return hexToRgba(colorStr);
             }
