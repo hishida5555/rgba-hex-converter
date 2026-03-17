@@ -4,17 +4,24 @@
 // main.jsから関数をコピー
 function extractColorCodes(text) {
     const foundColors = [];
-    const processed = new Set();
+    const usedRanges = [];
     
+    // 1. HEX+パーセント形式を最初に検索（最も具体的）
     const hexPercentPattern = /(#?[a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%/gi;
     let match;
     while ((match = hexPercentPattern.exec(text)) !== null) {
         const startPos = match.index;
         const endPos = startPos + match[0].length;
-        const key = `${startPos}-${endPos}`;
         
-        if (!processed.has(key)) {
-            processed.add(key);
+        // 重複チェック
+        const isOverlapping = usedRanges.some(range => 
+            (startPos >= range.start && startPos < range.end) ||
+            (endPos > range.start && endPos <= range.end) ||
+            (startPos <= range.start && endPos >= range.end)
+        );
+        
+        if (!isOverlapping) {
+            usedRanges.push({ start: startPos, end: endPos });
             foundColors.push({
                 text: match[0],
                 index: startPos,
@@ -23,26 +30,20 @@ function extractColorCodes(text) {
         }
     }
     
+    // 2. RGBA/RGB形式を検索
     const rgbaPattern = /rgba?\s*\(\s*\d+\s*,\s*\d+\s*,\s*\d+(?:\s*,\s*[\d.]+)?\s*\)/gi;
     while ((match = rgbaPattern.exec(text)) !== null) {
         const startPos = match.index;
         const endPos = startPos + match[0].length;
-        const key = `${startPos}-${endPos}`;
         
-        let alreadyProcessed = false;
-        for (let pos = startPos; pos <= endPos; pos++) {
-            for (const processedKey of processed) {
-                const [procStart, procEnd] = processedKey.split('-').map(Number);
-                if (pos >= procStart && pos <= procEnd) {
-                    alreadyProcessed = true;
-                    break;
-                }
-            }
-            if (alreadyProcessed) break;
-        }
+        const isOverlapping = usedRanges.some(range => 
+            (startPos >= range.start && startPos < range.end) ||
+            (endPos > range.start && endPos <= range.end) ||
+            (startPos <= range.start && endPos >= range.end)
+        );
         
-        if (!alreadyProcessed) {
-            processed.add(key);
+        if (!isOverlapping) {
+            usedRanges.push({ start: startPos, end: endPos });
             foundColors.push({
                 text: match[0],
                 index: startPos,
@@ -51,26 +52,20 @@ function extractColorCodes(text) {
         }
     }
     
+    // 3. 単独のHEX形式を検索（最後） - より厳密に
     const hexPattern = /#?[a-f\d]{3}(?:[a-f\d]{3})?(?:[a-f\d]{2})?/gi;
     while ((match = hexPattern.exec(text)) !== null) {
         const startPos = match.index;
         const endPos = startPos + match[0].length;
-        const key = `${startPos}-${endPos}`;
         
-        let alreadyProcessed = false;
-        for (let pos = startPos; pos <= endPos; pos++) {
-            for (const processedKey of processed) {
-                const [procStart, procEnd] = processedKey.split('-').map(Number);
-                if (pos >= procStart && pos <= procEnd) {
-                    alreadyProcessed = true;
-                    break;
-                }
-            }
-            if (alreadyProcessed) break;
-        }
+        const isOverlapping = usedRanges.some(range => 
+            (startPos >= range.start && startPos < range.end) ||
+            (endPos > range.start && endPos <= range.end) ||
+            (startPos <= range.start && endPos >= range.end)
+        );
         
-        if (!alreadyProcessed) {
-            processed.add(key);
+        if (!isOverlapping) {
+            usedRanges.push({ start: startPos, end: endPos });
             foundColors.push({
                 text: match[0],
                 index: startPos,
@@ -146,7 +141,7 @@ function hexToRgba(hexStr) {
 
 function hexPercentToRgba(hexPercentStr) {
     const hexPercentPattern = /^#?([a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%$/i;
-    const match = hexPercentStr.match(hexPercentPattern);
+    const match = hexPercentStr.match(hexPercentStr);
     
     if (!match) return null;
     
@@ -205,22 +200,16 @@ function convertAndReplaceColors(text, converter) {
     }
     
     let result = text;
-    let offset = 0;
     
-    for (let i = 0; i < colorCodes.length; i++) {
+    // 後ろから処理して位置ズレを防ぐ
+    for (let i = colorCodes.length - 1; i >= 0; i--) {
         const color = colorCodes[i];
-        const actualIndex = color.index + offset;
-        const actualText = result.substring(actualIndex, actualIndex + color.length);
+        const convertedColor = converter(color.text);
         
-        if (actualText === color.text) {
-            const convertedColor = converter(color.text);
-            
-            if (convertedColor && convertedColor !== color.text) {
-                const before = result.substring(0, actualIndex);
-                const after = result.substring(actualIndex + color.length);
-                result = before + convertedColor + after;
-                offset += convertedColor.length - color.length;
-            }
+        if (convertedColor && convertedColor !== color.text) {
+            const before = result.substring(0, color.index);
+            const after = result.substring(color.index + color.length);
+            result = before + convertedColor + after;
         }
     }
     
@@ -275,50 +264,50 @@ const hexPercentToHexTestCases = [
     // HEX+パーセントが多い場合
     {
         input: "color: #ff0000 50%; background: #00ff00-75%; border: rgba(0, 0, 255, 0.8); outline: #ffffff;",
-        expected: "color: #ff000080; background: #00ff00bf; border: #0000ffcc; outline: #ffffff;",
-        description: "HEX+パーセントが多い → すべてHEXに変換"
+        expected: "color: rgba(255, 0, 0, 0.50); background: rgba(0, 255, 0, 0.75); border: rgba(0, 0, 255, 0.80); outline: rgb(255, 255, 255);",
+        description: "HEX+パーセントが多い → RGBAに統一"
     },
     
     // 混合形式
     {
         input: "$primary: #ff0000-50%; $secondary: rgba(0, 255, 0, 0.7); $tertiary: #00ff00 25%; $quaternary: #0000ff;",
-        expected: "$primary: #ff000080; $secondary: #00ff00b3; $tertiary: #00ff0040; $quaternary: #0000ff;",
-        description: "HEX+パーセントとRGBA混在 → 透明度付きをHEXに変換"
+        expected: "$primary: rgba(255, 0, 0, 0.50); $secondary: rgba(0, 255, 0, 0.70); $tertiary: rgba(0, 255, 0, 0.25); $quaternary: rgb(0, 0, 255);",
+        description: "HEX+パーセントとRGBA混在 → RGBAに統一"
     },
     
     // すべてHEX+パーセント
     {
         input: "color: #ff0000-50%; background: #00ff00 75%; border: #0000ff-25%;",
-        expected: "color: #ff000080; background: #00ff00bf; border: #0000ff40;",
-        description: "すべてHEX+パーセント → すべてHEXに変換"
+        expected: "color: rgba(255, 0, 0, 0.50); background: rgba(0, 255, 0, 0.75); border: rgba(0, 0, 255, 0.25);",
+        description: "すべてHEX+パーセント → RGBAに統一"
     },
     
     // 純粋なHEXは保持
     {
         input: "color: #ff0000; background: #00ff00; border: #0000ff;",
-        expected: "color: #ff0000; background: #00ff00; border: #0000ff;",
-        description: "純粋なHEXのみ → 変換なし"
+        expected: "color: rgb(255, 0, 0); background: rgb(0, 255, 0); border: rgb(0, 0, 255);",
+        description: "純粋なHEXのみ → RGBAに変換"
     },
     
     // RGBは保持
     {
         input: "color: rgb(255, 0, 0); background: rgb(0, 255, 0); border: rgb(0, 0, 255);",
         expected: "color: rgb(255, 0, 0); background: rgb(0, 255, 0); border: rgb(0, 0, 255);",
-        description: "RGBのみ → 変換なし"
+        description: "RGBのみ → 変換なし（HEXがないため）"
     },
     
     // 複雑な混在
     {
         input: ".header { color: #ff0000 50%; background: #343a40; }\n.nav { border: rgba(0, 255, 0, 0.8); outline: #00ff00-25%; }",
-        expected: ".header { color: #ff000080; background: #343a40; }\n.nav { border: #00ff00cc; outline: #00ff0040; }",
-        description: "複雑な混在 → 透明度付きをHEXに変換"
+        expected: ".header { color: rgba(255, 0, 0, 0.50); background: rgb(52, 58, 64); }\n.nav { border: rgba(0, 255, 0, 0.80); outline: rgba(0, 255, 0, 0.25); }",
+        description: "複雑な混在 → RGBAに統一"
     },
     
     // 100%と0%
     {
         input: "color: #ff0000-100%; background: #00ff00 0%; border: #0000ff-50%;",
-        expected: "color: #ff0000; background: #00000000; border: #0000ff80;",
-        description: "100%はHEXに、0%は透明度付きHEXに変換"
+        expected: "color: rgb(255, 0, 0); background: rgba(0, 255, 0, 0.00); border: rgba(0, 0, 255, 0.50);",
+        description: "100%はRGBに、0%はRGBAに変換"
     }
 ];
 
@@ -357,14 +346,14 @@ console.log(`失敗: ${failed}`);
 console.log(`合計: ${passed + failed}`);
 
 console.log("\n=== HEX+パーセント変換ルール ===");
-console.log("• HEX+パーセント形式もHEXに変換");
-console.log("• #ff0000 50% → rgba(255,0,0,0.50) → #ff000080");
-console.log("• 純粋なHEXは保護");
+console.log("• HEX+パーセント形式もRGBAに変換");
+console.log("• #ff0000 50% → rgba(255,0,0,0.50)");
+console.log("• 純粋なHEXはRGBAに変換");
 console.log("• RGB（透明度なし）は保護");
 
 if (failed === 0) {
     console.log("\n🎉 すべてのテストがパスしました！");
-    console.log("✅ HEX+パーセント形式のHEX変換が正常に動作します");
+    console.log("✅ HEX+パーセント形式の変換が正常に動作します");
 } else {
     console.log(`\n⚠️  ${failed}件のテストが失敗しました。`);
 }
