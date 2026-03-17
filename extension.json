@@ -1,0 +1,31 @@
+{
+  "identifier": "com.example.rgba-hex-converter",
+  "name": "RGBA/HEX Color Converter",
+  "vendor": "Example Developer",
+  "description": "エディタ内でRGBAとHEXカラーコードを相互変換する機能拡張",
+  "version": "1.0.0",
+  "categories": ["commands"],
+  "main": "main.js",
+  "commands": {
+    "editor": [
+      {
+        "title": "RGBAをHEXに変換",
+        "command": "convertRgbaToHex",
+        "shortcut": "ctrl-cmd-h",
+        "when": "editorHasFocus && editorHasSelection"
+      },
+      {
+        "title": "HEXをRGBAに変換", 
+        "command": "convertHexToRgba",
+        "shortcut": "ctrl-cmd-r",
+        "when": "editorHasFocus && editorHasSelection"
+      },
+      {
+        "title": "カラー形式を自動検出して変換",
+        "command": "autoConvertColor",
+        "shortcut": "ctrl-cmd-c",
+        "when": "editorHasFocus && editorHasSelection"
+      }
+    ]
+  }
+}
