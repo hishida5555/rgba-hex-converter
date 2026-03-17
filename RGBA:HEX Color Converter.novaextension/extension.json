@@ -9,6 +9,15 @@
         "clipboard": true
     },
     "main": "main.js",
+    "config": [
+        {
+            "key": "p53d.rgba-hex-converter.enableClipboardCommands",
+            "title": "クリップボード変換を有効にする（テスト機能）",
+            "description": "有効にすると、クリップボード内のカラーコードを直接変換する機能が使えるようになります。",
+            "type": "boolean",
+            "default": false
+        }
+    ],
     "commands": {
         "editor": [
             {

@@ -418,6 +418,13 @@ function convertSelection(editor, converter) {
 
 // クリップボード内のカラーコードを変換する関数
 async function convertClipboardColor(conversionType) {
+    // 設定でクリップボード変換が無効の場合はクリップボードにアクセスせず終了
+    const isEnabled = nova.config.get("p53d.rgba-hex-converter.enableClipboardCommands");
+    if (!isEnabled) {
+        nova.workspace.showWarningMessage("クリップボード変換はテスト機能です。拡張機能の設定から有効にしてください。");
+        return;
+    }
+    
     try {
         const clipboardText = await nova.clipboard.readText();
         
