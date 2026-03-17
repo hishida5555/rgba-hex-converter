@@ -417,36 +417,40 @@ function convertSelection(editor, converter) {
 }
 
 // クリップボード内のカラーコードを変換する関数
-function convertClipboardColor(conversionType) {
-    const clipboardText = nova.clipboard.readText();
-    
-    if (!clipboardText || typeof clipboardText !== 'string') {
-        nova.workspace.showErrorMessage("クリップボードが空です");
-        return;
-    }
-    
-    const trimmedText = String(clipboardText).trim();
-    let convertedText;
-    
-    switch (conversionType) {
-        case 'rgba-to-hex':
-            convertedText = rgbaToHex(trimmedText) || (HEX_PERCENT_PATTERN.test(trimmedText) ? rgbaToHex(hexPercentToRgba(trimmedText)) : null);
-            break;
-        case 'hex-to-rgba':
-            convertedText = hexToRgba(trimmedText) || (HEX_PERCENT_PATTERN.test(trimmedText) ? hexPercentToRgba(trimmedText) : null);
-            break;
-        case 'auto':
-            convertedText = smartAutoConvertColors(trimmedText) || autoConvertColor(trimmedText);
-            break;
-        default:
+async function convertClipboardColor(conversionType) {
+    try {
+        const clipboardText = await nova.clipboard.readText();
+        
+        if (!clipboardText || clipboardText.trim() === '') {
+            nova.workspace.showErrorMessage("クリップボードが空です");
             return;
-    }
-    
-    if (convertedText) {
-        nova.clipboard.writeText(convertedText);
-        nova.workspace.showInformativeMessage(`クリップボードを変換しました: ${trimmedText} → ${convertedText}`);
-    } else {
-        nova.workspace.showWarningMessage(`"${trimmedText}" は有効なカラーコードではありません`);
+        }
+        
+        const trimmedText = clipboardText.trim();
+        let convertedText;
+        
+        switch (conversionType) {
+            case 'rgba-to-hex':
+                convertedText = rgbaToHex(trimmedText) || (HEX_PERCENT_PATTERN.test(trimmedText) ? rgbaToHex(hexPercentToRgba(trimmedText)) : null);
+                break;
+            case 'hex-to-rgba':
+                convertedText = hexToRgba(trimmedText) || (HEX_PERCENT_PATTERN.test(trimmedText) ? hexPercentToRgba(trimmedText) : null);
+                break;
+            case 'auto':
+                convertedText = smartAutoConvertColors(trimmedText) || autoConvertColor(trimmedText);
+                break;
+            default:
+                return;
+        }
+        
+        if (convertedText) {
+            await nova.clipboard.writeText(convertedText);
+            nova.workspace.showInformativeMessage(`クリップボードを変換しました: ${trimmedText} → ${convertedText}`);
+        } else {
+            nova.workspace.showWarningMessage(`"${trimmedText}" は有効なカラーコードではありません`);
+        }
+    } catch (error) {
+        nova.workspace.showErrorMessage(`クリップボード操作エラー: ${error.message}`);
     }
 }
 
@@ -464,16 +468,16 @@ nova.commands.register("autoConvertColor", (editor) => {
 });
 
 // クリップボード用コマンド登録
-nova.commands.register("convertClipboardRgbaToHex", () => {
-    convertClipboardColor('rgba-to-hex');
+nova.commands.register("convertClipboardRgbaToHex", async () => {
+    await convertClipboardColor('rgba-to-hex');
 });
 
-nova.commands.register("convertClipboardHexToRgba", () => {
-    convertClipboardColor('hex-to-rgba');
+nova.commands.register("convertClipboardHexToRgba", async () => {
+    await convertClipboardColor('hex-to-rgba');
 });
 
-nova.commands.register("convertClipboardAuto", () => {
-    convertClipboardColor('auto');
+nova.commands.register("convertClipboardAuto", async () => {
+    await convertClipboardColor('auto');
 });
 
 // 拡張機能が有効になったときの処理
