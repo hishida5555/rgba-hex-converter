@@ -159,18 +159,99 @@ function convertSelection(editor, converter) {
     });
 }
 
-// コマンド登録
-nova.commands.register("convertRgbaToHex", (editor) => {
-    convertSelection(editor, rgbaToHex);
-});
+// クリップボードからテキストを取得
+async function getClipboardText() {
+    try {
+        const clipboardText = await nova.clipboard.readText();
+        return clipboardText;
+    } catch (error) {
+        console.error("クリップボードの読み取りに失敗しました:", error);
+        return null;
+    }
+}
 
-nova.commands.register("convertHexToRgba", (editor) => {
-    convertSelection(editor, hexToRgba);
-});
+// クリップボードにテキストを設定
+async function setClipboardText(text) {
+    try {
+        await nova.clipboard.writeText(text);
+        return true;
+    } catch (error) {
+        console.error("クリップボードの書き込みに失敗しました:", error);
+        return false;
+    }
+}
 
-nova.commands.register("autoConvertColor", (editor) => {
-    convertSelection(editor, autoConvertColor);
-});
+// クリップボード内のカラーコードを変換する関数
+async function convertClipboardColor(conversionType) {
+    const clipboardText = await getClipboardText();
+    
+    if (!clipboardText) {
+        nova.workspace.showErrorMessage("クリップボードが空です");
+        return;
+    }
+    
+    let convertedText;
+    const trimmedText = clipboardText.trim();
+    
+    switch (conversionType) {
+        case 'rgba-to-hex':
+            convertedText = rgbaToHex(trimmedText);
+            break;
+        case 'hex-to-rgba':
+            convertedText = hexToRgba(trimmedText);
+            break;
+        case 'auto':
+            convertedText = autoConvertColor(trimmedText);
+            break;
+        default:
+            nova.workspace.showErrorMessage("無効な変換タイプです");
+            return;
+    }
+    
+    if (convertedText) {
+        const success = await setClipboardText(convertedText);
+        if (success) {
+            nova.workspace.showInformativeMessage(
+                `クリップボードを変換しました:\n${trimmedText} → ${convertedText}`
+            );
+        }
+    } else {
+        nova.workspace.showWarningMessage(
+            `"${trimmedText}" は有効なカラーコードではありません`
+        );
+    }
+}
 
-// 拡張機能が有効になったときの処理
-console.log("RGBA/HEX Color Converter拡張機能が読み込まれました");
+// 拡張機能の有効化
+exports.activate = function() {
+    // エディタ用コマンド登録
+    nova.commands.register("convertRgbaToHex", (editor) => {
+        convertSelection(editor, rgbaToHex);
+    });
+
+    nova.commands.register("convertHexToRgba", (editor) => {
+        convertSelection(editor, hexToRgba);
+    });
+
+    nova.commands.register("autoConvertColor", (editor) => {
+        convertSelection(editor, autoConvertColor);
+    });
+
+    // クリップボード用コマンド登録
+    nova.commands.register("convertClipboardRgbaToHex", async () => {
+        await convertClipboardColor('rgba-to-hex');
+    });
+
+    nova.commands.register("convertClipboardHexToRgba", async () => {
+        await convertClipboardColor('hex-to-rgba');
+    });
+
+    nova.commands.register("convertClipboardAuto", async () => {
+        await convertClipboardColor('auto');
+    });
+};
+
+// 拡張機能の無効化
+exports.deactivate = function() {
+    // クリーンアップ処理が必要な場合はここに記述
+};
