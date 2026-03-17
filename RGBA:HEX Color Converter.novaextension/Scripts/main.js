@@ -2,9 +2,10 @@
 // Panic Nova用
 
 // HEX+パーセント形式をRGBAに変換する関数（#ff0000-50% → rgba(255, 0, 0, 0.5)）
+// 対応形式: #ff0000-50%, #ff0000 50%, #ff0000,50%, #ff0000 - 50%, #ff0000 , 50%
 function hexPercentToRgba(hexPercentStr) {
-    // HEX+パーセント形式の正規表現パターン
-    const hexPercentPattern = /^#?([a-f\d]{3}|[a-f\d]{6})\s*-\s*(\d+)%$/i;
+    // HEX+パーセント形式の正規表現パターン（-、スペース、カンマ区切りに対応）
+    const hexPercentPattern = /^#?([a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%$/i;
     const match = hexPercentStr.match(hexPercentPattern);
     
     if (!match) {
@@ -39,7 +40,7 @@ function hexPercentToRgba(hexPercentStr) {
 function rgbaToHex(rgbaStr) {
     // RGBA形式の正規表現パターン
     const rgbaPattern = /rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/i;
-    const match = rgbaStr.match(rgbaPattern);
+    const match = rgbaPattern.match(rgbaStr);
     
     if (!match) {
         return null; // RGBA形式でない場合
@@ -118,8 +119,8 @@ function hexToRgba(hexStr) {
 function autoConvertColor(colorStr) {
     const trimmed = colorStr.trim();
     
-    // HEX+パーセント形式かチェック（#ff0000-50%）
-    if (/^#?[a-f\d]{3,6}\s*-\s*\d+%$/i.test(trimmed)) {
+    // HEX+パーセント形式かチェック（#ff0000-50%, #ff0000 50%, #ff0000,50%）
+    if (/^#?[a-f\d]{3,6}\s*[-,\s]\s*\d+%$/i.test(trimmed)) {
         return hexPercentToRgba(trimmed);
     }
     
