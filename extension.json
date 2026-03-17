@@ -6,7 +6,7 @@
   "version": "1.0.0",
   "categories": ["commands"],
   "entitlements": {
-    "clipboard": "readwrite"
+    "clipboard": true
   },
   "main": "main.js",
   "commands": {
