@@ -421,7 +421,7 @@ async function convertClipboardColor(conversionType) {
     try {
         const clipboardText = await nova.clipboard.readText();
         
-        if (!clipboardText || clipboardText.trim() === '') {
+        if (!clipboardText || clipboardText === '' || (typeof clipboardText === 'string' && clipboardText.trim() === '')) {
             nova.workspace.showErrorMessage("クリップボードが空です");
             return;
         }
