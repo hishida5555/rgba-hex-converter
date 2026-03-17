@@ -3,7 +3,7 @@
 
 // 共通の正規表現パターン
 const HEX_PERCENT_PATTERN = /^#?([a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%$/i;
-const HEX_PERCENT_PATTERN_GLOBAL = /(#?[a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%/gi;
+const HEX_PERCENT_PATTERN_GLOBAL = /#([a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%/gi;
 
 // HEX+パーセント形式をRGBAに変換する関数（#ff0000-50% → rgba(255, 0, 0, 0.5)）
 // 対応形式: #ff0000-50%, #ff0000 50%, #ff0000,50%, #ff0000 - 50%, #ff0000 , 50%

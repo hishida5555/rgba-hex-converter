@@ -1,0 +1,96 @@
+/* ========================================
+   エディタ内テスト用SCSSファイル
+   各セクションを選択して変換をテスト
+   ======================================== */
+
+/* 1. 基本的な変換（正常動作） */
+.basic-test {
+  color: #ff0000;
+  background: rgba(0, 255, 0, 0.5);
+  border: rgb(0, 0, 255);
+}
+
+/* 2. HEX+パーセント（二重#問題） */
+.hex-percent-test {
+  color: #ff0000 50%;
+  background: #00ff00-75%;
+  border: #0000ff 25%;
+}
+
+/* 3. 混在形式（自動変換） */
+.mixed-test {
+  color: #ff0000;
+  background: rgba(0, 255, 0, 0.5);
+  border: #0000ff;
+  outline: #ffffff 50%;
+}
+
+/* 4. RGBのみ（HEXに変換されるべき） */
+.rgb-only-test {
+  color: rgb(255, 0, 0);
+  background: rgb(0, 255, 0);
+  border: rgb(0, 0, 255);
+}
+
+/* 5. RGBAのみ（RGBAのまま） */
+.rgba-only-test {
+  color: rgba(255, 0, 0, 0.8);
+  background: rgba(0, 255, 0, 0.6);
+  border: rgba(0, 0, 255, 0.4);
+}
+
+/* 6. 範囲外の値（無視される） */
+.invalid-values-test {
+  color: rgb(300, 0, 0);           /* RGB値が範囲外 */
+  background: rgba(255, 0, 0, 1.5); /* アルファ値が範囲外 */
+  border: #ff0000 150%;             /* パーセント値が範囲外 */
+}
+
+/* 7. 純粋なHEXのみ（変換されない） */
+.pure-hex-test {
+  color: #ff0000;
+  background: #00ff00;
+  border: #0000ff;
+}
+
+/* 8. 短い形式のHEX */
+.short-hex-test {
+  color: #f00;
+  background: #0f0;
+  border: #00f;
+}
+
+/* 9. アルファ付きHEX */
+.hex-alpha-test {
+  color: #ff000080;
+  background: #00ff00cc;
+  border: #0000ff40;
+}
+
+/* 10. SCSS変数 */
+$primary-color: #ff0000;
+$secondary-color: rgba(0, 255, 0, 0.5);
+$tertiary-color: #0000ff 50%;
+
+/* 11. CSSカスタムプロパティ */
+:root {
+  --color-primary: #ff0000;
+  --color-secondary: rgba(0, 255, 0, 0.5);
+  --color-tertiary: rgb(0, 0, 255);
+}
+
+/* 12. 複数プロパティ */
+.multi-property-test {
+  color: #ff0000;
+  background-color: rgba(0, 255, 0, 0.5);
+  border-color: rgb(0, 0, 255);
+  outline-color: #ffffff 50%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   テスト手順:
+   1. 各セクションを選択
+   2. ⌃⌘C (自動変換) を実行
+   3. 結果を確認
+   ======================================== */
