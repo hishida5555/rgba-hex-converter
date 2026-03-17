@@ -36,6 +36,126 @@ function hexPercentToRgba(hexPercentStr) {
     }
 }
 
+// CSS/SCSSプロパティからカラーコードを抽出する関数
+function extractColorCodes(text) {
+    const foundColors = [];
+    const processed = new Set(); // 処理済み位置を記録
+    
+    // 1. HEX+パーセント形式を最初に検索（最も具体的）
+    const hexPercentPattern = /(#?[a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%/gi;
+    let match;
+    while ((match = hexPercentPattern.exec(text)) !== null) {
+        const startPos = match.index;
+        const endPos = startPos + match[0].length;
+        const key = `${startPos}-${endPos}`;
+        
+        if (!processed.has(key)) {
+            processed.add(key);
+            foundColors.push({
+                text: match[0],
+                index: startPos,
+                length: match[0].length
+            });
+        }
+    }
+    
+    // 2. RGBA/RGB形式を検索
+    const rgbaPattern = /rgba?\s*\(\s*\d+\s*,\s*\d+\s*,\s*\d+(?:\s*,\s*[\d.]+)?\s*\)/gi;
+    while ((match = rgbaPattern.exec(text)) !== null) {
+        const startPos = match.index;
+        const endPos = startPos + match[0].length;
+        const key = `${startPos}-${endPos}`;
+        
+        // 既に処理済みでないかチェック
+        let alreadyProcessed = false;
+        for (let pos = startPos; pos <= endPos; pos++) {
+            for (const processedKey of processed) {
+                const [procStart, procEnd] = processedKey.split('-').map(Number);
+                if (pos >= procStart && pos <= procEnd) {
+                    alreadyProcessed = true;
+                    break;
+                }
+            }
+            if (alreadyProcessed) break;
+        }
+        
+        if (!alreadyProcessed) {
+            processed.add(key);
+            foundColors.push({
+                text: match[0],
+                index: startPos,
+                length: match[0].length
+            });
+        }
+    }
+    
+    // 3. 単独のHEX形式を検索（最後）
+    const hexPattern = /#?[a-f\d]{3}(?:[a-f\d]{3})?(?:[a-f\d]{2})?/gi;
+    while ((match = hexPattern.exec(text)) !== null) {
+        const startPos = match.index;
+        const endPos = startPos + match[0].length;
+        const key = `${startPos}-${endPos}`;
+        
+        // 既に処理済みでないかチェック
+        let alreadyProcessed = false;
+        for (let pos = startPos; pos <= endPos; pos++) {
+            for (const processedKey of processed) {
+                const [procStart, procEnd] = processedKey.split('-').map(Number);
+                if (pos >= procStart && pos <= procEnd) {
+                    alreadyProcessed = true;
+                    break;
+                }
+            }
+            if (alreadyProcessed) break;
+        }
+        
+        if (!alreadyProcessed) {
+            processed.add(key);
+            foundColors.push({
+                text: match[0],
+                index: startPos,
+                length: match[0].length
+            });
+        }
+    }
+    
+    // インデックス順にソート
+    return foundColors.sort((a, b) => a.index - b.index);
+}
+
+// カラーコードを変換して置換する関数（複数対応）
+function convertAndReplaceColors(text, converter) {
+    const colorCodes = extractColorCodes(text);
+    
+    if (colorCodes.length === 0) {
+        return null;
+    }
+    
+    let result = text;
+    
+    // 前から処理し、位置を再計算
+    let offset = 0;
+    for (let i = 0; i < colorCodes.length; i++) {
+        const color = colorCodes[i];
+        const actualIndex = color.index + offset;
+        const actualText = result.substring(actualIndex, actualIndex + color.length);
+        
+        // 実際のテキストがまだ変換されていないことを確認
+        if (actualText === color.text) {
+            const convertedColor = converter(color.text);
+            
+            if (convertedColor && convertedColor !== color.text) {
+                const before = result.substring(0, actualIndex);
+                const after = result.substring(actualIndex + color.length);
+                result = before + convertedColor + after;
+                offset += convertedColor.length - color.length;
+            }
+        }
+    }
+    
+    return result === text ? null : result;
+}
+
 // RGBAをHEXに変換する関数
 function rgbaToHex(rgbaStr) {
     // RGBA形式の正規表現パターン
@@ -137,7 +257,7 @@ function autoConvertColor(colorStr) {
     return null; // どちらの形式でもない場合
 }
 
-// 選択テキストを変換するヘルパー関数
+// 選択テキストを変換するヘルパー関数（複数カラーコード対応）
 function convertSelection(editor, converter) {
     const selectedRanges = editor.selectedRanges;
     if (selectedRanges.length === 0) {
@@ -149,12 +269,20 @@ function convertSelection(editor, converter) {
         // 選択範囲を逆順に処理して位置がずれないようにする
         for (const range of selectedRanges.reverse()) {
             const selectedText = editor.getTextInRange(range);
-            const convertedText = converter(selectedText);
+            
+            // スマート抽出機能を使用してカラーコードを変換
+            const convertedText = convertAndReplaceColors(selectedText, converter);
             
             if (convertedText) {
                 edit.replace(range, convertedText);
             } else {
-                nova.workspace.showWarningMessage(`"${selectedText}" は有効なカラーコードではありません`);
+                // 従来の方法でフォールバック
+                const fallbackConverted = converter(selectedText);
+                if (fallbackConverted) {
+                    edit.replace(range, fallbackConverted);
+                } else {
+                    nova.workspace.showWarningMessage(`選択範囲内に有効なカラーコードが見つかりませんでした`);
+                }
             }
         }
     });
