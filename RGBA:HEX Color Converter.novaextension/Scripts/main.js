@@ -417,8 +417,8 @@ function convertSelection(editor, converter) {
 }
 
 // クリップボード内のカラーコードを変換する関数
-async function convertClipboardColor(conversionType) {
-    const clipboardText = await nova.clipboard.readText();
+function convertClipboardColor(conversionType) {
+    const clipboardText = nova.clipboard.readText();
     
     if (!clipboardText) {
         nova.workspace.showErrorMessage("クリップボードが空です");
@@ -443,7 +443,7 @@ async function convertClipboardColor(conversionType) {
     }
     
     if (convertedText) {
-        await nova.clipboard.writeText(convertedText);
+        nova.clipboard.writeText(convertedText);
         nova.workspace.showInformativeMessage(`クリップボードを変換しました: ${trimmedText} → ${convertedText}`);
     } else {
         nova.workspace.showWarningMessage(`"${trimmedText}" は有効なカラーコードではありません`);
@@ -464,16 +464,16 @@ nova.commands.register("autoConvertColor", (editor) => {
 });
 
 // クリップボード用コマンド登録
-nova.commands.register("convertClipboardRgbaToHex", async () => {
-    await convertClipboardColor('rgba-to-hex');
+nova.commands.register("convertClipboardRgbaToHex", () => {
+    convertClipboardColor('rgba-to-hex');
 });
 
-nova.commands.register("convertClipboardHexToRgba", async () => {
-    await convertClipboardColor('hex-to-rgba');
+nova.commands.register("convertClipboardHexToRgba", () => {
+    convertClipboardColor('hex-to-rgba');
 });
 
-nova.commands.register("convertClipboardAuto", async () => {
-    await convertClipboardColor('auto');
+nova.commands.register("convertClipboardAuto", () => {
+    convertClipboardColor('auto');
 });
 
 // 拡張機能が有効になったときの処理
