@@ -420,12 +420,12 @@ function convertSelection(editor, converter) {
 function convertClipboardColor(conversionType) {
     const clipboardText = nova.clipboard.readText();
     
-    if (!clipboardText) {
+    if (!clipboardText || typeof clipboardText !== 'string') {
         nova.workspace.showErrorMessage("クリップボードが空です");
         return;
     }
     
-    const trimmedText = clipboardText.trim();
+    const trimmedText = String(clipboardText).trim();
     let convertedText;
     
     switch (conversionType) {
