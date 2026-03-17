@@ -1,47 +1,11 @@
-// RGBA/HEX カラーコード変換拡張機能
-// Panic Nova用
+// スマートHEX変換のテスト
+// 透明度付きRGBAのみを変換し、純粋なHEXは保持する機能のテスト
 
-// HEX+パーセント形式をRGBAに変換する関数（#ff0000-50% → rgba(255, 0, 0, 0.5)）
-// 対応形式: #ff0000-50%, #ff0000 50%, #ff0000,50%, #ff0000 - 50%, #ff0000 , 50%
-function hexPercentToRgba(hexPercentStr) {
-    // HEX+パーセント形式の正規表現パターン（-、スペース、カンマ区切りに対応）
-    const hexPercentPattern = /^#?([a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%$/i;
-    const match = hexPercentStr.match(hexPercentPattern);
-    
-    if (!match) {
-        return null;
-    }
-    
-    let hexPart = match[1];
-    const percent = parseInt(match[2]) / 100; // パーセントを小数に変換
-    
-    // パーセント値の範囲チェック
-    if (percent < 0 || percent > 1) {
-        return null;
-    }
-    
-    // 短い形式を長い形式に展開
-    if (hexPart.length === 3) {
-        hexPart = hexPart.split('').map(c => c + c).join('');
-    }
-    
-    const r = parseInt(hexPart.substr(0, 2), 16);
-    const g = parseInt(hexPart.substr(2, 2), 16);
-    const b = parseInt(hexPart.substr(4, 2), 16);
-    
-    if (percent === 1) {
-        return `rgb(${r}, ${g}, ${b})`;
-    } else {
-        return `rgba(${r}, ${g}, ${b}, ${percent.toFixed(2)})`;
-    }
-}
-
-// CSS/SCSSプロパティからカラーコードを抽出する関数
+// main.jsから関数をコピー
 function extractColorCodes(text) {
     const foundColors = [];
-    const processed = new Set(); // 処理済み位置を記録
+    const processed = new Set();
     
-    // 1. HEX+パーセント形式を最初に検索（最も具体的）
     const hexPercentPattern = /(#?[a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%/gi;
     let match;
     while ((match = hexPercentPattern.exec(text)) !== null) {
@@ -59,14 +23,12 @@ function extractColorCodes(text) {
         }
     }
     
-    // 2. RGBA/RGB形式を検索
     const rgbaPattern = /rgba?\s*\(\s*\d+\s*,\s*\d+\s*,\s*\d+(?:\s*,\s*[\d.]+)?\s*\)/gi;
     while ((match = rgbaPattern.exec(text)) !== null) {
         const startPos = match.index;
         const endPos = startPos + match[0].length;
         const key = `${startPos}-${endPos}`;
         
-        // 既に処理済みでないかチェック
         let alreadyProcessed = false;
         for (let pos = startPos; pos <= endPos; pos++) {
             for (const processedKey of processed) {
@@ -89,14 +51,12 @@ function extractColorCodes(text) {
         }
     }
     
-    // 3. 単独のHEX形式を検索（最後）
     const hexPattern = /#?[a-f\d]{3}(?:[a-f\d]{3})?(?:[a-f\d]{2})?/gi;
     while ((match = hexPattern.exec(text)) !== null) {
         const startPos = match.index;
         const endPos = startPos + match[0].length;
         const key = `${startPos}-${endPos}`;
         
-        // 既に処理済みでないかチェック
         let alreadyProcessed = false;
         for (let pos = startPos; pos <= endPos; pos++) {
             for (const processedKey of processed) {
@@ -119,72 +79,28 @@ function extractColorCodes(text) {
         }
     }
     
-    // インデックス順にソート
     return foundColors.sort((a, b) => a.index - b.index);
 }
 
-// カラーコードを変換して置換する関数（複数対応）
-function convertAndReplaceColors(text, converter) {
-    const colorCodes = extractColorCodes(text);
-    
-    if (colorCodes.length === 0) {
-        return null;
-    }
-    
-    let result = text;
-    
-    // 前から処理し、位置を再計算
-    let offset = 0;
-    for (let i = 0; i < colorCodes.length; i++) {
-        const color = colorCodes[i];
-        const actualIndex = color.index + offset;
-        const actualText = result.substring(actualIndex, actualIndex + color.length);
-        
-        // 実際のテキストがまだ変換されていないことを確認
-        if (actualText === color.text) {
-            const convertedColor = converter(color.text);
-            
-            if (convertedColor && convertedColor !== color.text) {
-                const before = result.substring(0, actualIndex);
-                const after = result.substring(actualIndex + color.length);
-                result = before + convertedColor + after;
-                offset += convertedColor.length - color.length;
-            }
-        }
-    }
-    
-    return result === text ? null : result;
-}
-
-// RGBAをHEXに変換する関数
 function rgbaToHex(rgbaStr) {
-    // RGBA形式の正規表現パターン
     const rgbaPattern = /rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/i;
     const match = rgbaStr.match(rgbaPattern);
     
-    if (!match) {
-        return null; // RGBA形式でない場合
-    }
+    if (!match) return null;
     
     const r = parseInt(match[1]);
     const g = parseInt(match[2]); 
     const b = parseInt(match[3]);
     const a = match[4] ? parseFloat(match[4]) : 1;
     
-    // 値の範囲チェック
     if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255 || a < 0 || a > 1) {
         return null;
     }
     
-    // HEX形式に変換
-    const toHex = (n) => {
-        const hex = n.toString(16).padStart(2, '0');
-        return hex;
-    };
+    const toHex = (n) => n.toString(16).padStart(2, '0');
     
     let hexStr = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     
-    // アルファ値が1でない場合は含める
     if (a !== 1) {
         const alphaHex = Math.round(a * 255).toString(16).padStart(2, '0');
         hexStr += alphaHex;
@@ -193,9 +109,7 @@ function rgbaToHex(rgbaStr) {
     return hexStr;
 }
 
-// HEXをRGBAに変換する関数
 function hexToRgba(hexStr) {
-    // HEX形式の正規表現パターン
     const hexPattern = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i;
     const shortHexPattern = /^#?([a-f\d])([a-f\d])([a-f\d])([a-f\d])?$/i;
     
@@ -207,27 +121,22 @@ function hexToRgba(hexStr) {
         isShortFormat = true;
     }
     
-    if (!match) {
-        return null; // HEX形式でない場合
-    }
+    if (!match) return null;
     
     let r, g, b, a;
     
     if (isShortFormat) {
-        // 短い形式 (#RGB) を展開
         r = parseInt(match[1] + match[1], 16);
         g = parseInt(match[2] + match[2], 16);
         b = parseInt(match[3] + match[3], 16);
         a = match[4] ? parseInt(match[4] + match[4], 16) / 255 : 1;
     } else {
-        // 通常形式 (#RRGGBB)
         r = parseInt(match[1], 16);
         g = parseInt(match[2], 16);
         b = parseInt(match[3], 16);
         a = match[4] ? parseInt(match[4], 16) / 255 : 1;
     }
     
-    // RGBA形式で返す
     if (a === 1) {
         return `rgb(${r}, ${g}, ${b})`;
     } else {
@@ -235,26 +144,32 @@ function hexToRgba(hexStr) {
     }
 }
 
-// カラー形式を自動検出して変換する関数（使用量が多い形式に統一）
-function autoConvertColor(colorStr) {
-    const trimmed = colorStr.trim();
+function hexPercentToRgba(hexPercentStr) {
+    const hexPercentPattern = /^#?([a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%$/i;
+    const match = hexPercentStr.match(hexPercentPattern);
     
-    if (/^#?[a-f\d]{3,6}\s*[-,\s]\s*\d+%$/i.test(trimmed)) {
-        return hexPercentToRgba(trimmed);
+    if (!match) return null;
+    
+    let hexPart = match[1];
+    const percent = parseInt(match[2]) / 100;
+    
+    if (percent < 0 || percent > 1) return null;
+    
+    if (hexPart.length === 3) {
+        hexPart = hexPart.split('').map(c => c + c).join('');
     }
     
-    if (/rgba?\s*\(/i.test(trimmed)) {
-        return rgbaToHex(trimmed);
-    }
+    const r = parseInt(hexPart.substr(0, 2), 16);
+    const g = parseInt(hexPart.substr(2, 2), 16);
+    const b = parseInt(hexPart.substr(4, 2), 16);
     
-    if (/^#?[a-f\d]{3,8}$/i.test(trimmed)) {
-        return hexToRgba(trimmed);
+    if (percent === 1) {
+        return `rgb(${r}, ${g}, ${b})`;
+    } else {
+        return `rgba(${r}, ${g}, ${b}, ${percent.toFixed(2)})`;
     }
-    
-    return null; // どちらの形式でもない場合
 }
 
-// 複数カラーコードの使用量を分析して、最適な変換方向を決定
 function analyzeColorUsage(colorCodes) {
     let hexCount = 0;
     let rgbaCount = 0;
@@ -270,23 +185,18 @@ function analyzeColorUsage(colorCodes) {
         }
     });
     
-    // HEX+パーセント形式はHEXとしてカウント
     const totalHex = hexCount + hexPercentCount;
     const totalRgba = rgbaCount;
     
-    console.log(`カラー形式分析: HEX=${totalHex}, RGBA=${totalRgba}, HEX+パーセント=${hexPercentCount}`);
-    
-    // 使用量が多い形式を返す
     if (totalHex > totalRgba) {
-        return 'to-rgba'; // HEXが多い → RGBAに統一
+        return 'to-rgba';
     } else if (totalRgba > totalHex) {
-        return 'to-hex';   // RGBAが多い → HEXに統一
+        return 'to-hex';
     } else {
-        return 'to-rgba'; // 同数の場合はRGBAに統一（一般的に使いやすい）
+        return 'to-rgba';
     }
 }
 
-// カラーコードを変換して置換する関数（複数対応、使用量ベースの自動判定）
 function convertAndReplaceColors(text, converter) {
     const colorCodes = extractColorCodes(text);
     
@@ -295,15 +205,13 @@ function convertAndReplaceColors(text, converter) {
     }
     
     let result = text;
-    
-    // 前から処理し、位置を再計算
     let offset = 0;
+    
     for (let i = 0; i < colorCodes.length; i++) {
         const color = colorCodes[i];
         const actualIndex = color.index + offset;
         const actualText = result.substring(actualIndex, actualIndex + color.length);
         
-        // 実際のテキストがまだ変換されていないことを確認
         if (actualText === color.text) {
             const convertedColor = converter(color.text);
             
@@ -319,7 +227,6 @@ function convertAndReplaceColors(text, converter) {
     return result === text ? null : result;
 }
 
-// スマート自動変換関数（使用量が多い形式に統一）
 function smartAutoConvertColors(text) {
     const colorCodes = extractColorCodes(text);
     
@@ -327,7 +234,6 @@ function smartAutoConvertColors(text) {
         return null;
     }
     
-    // 使用量を分析して変換方向を決定
     const conversionDirection = analyzeColorUsage(colorCodes);
     
     let converter;
@@ -338,7 +244,7 @@ function smartAutoConvertColors(text) {
             } else if (/^#?[a-f\d]{3,8}$/i.test(colorStr)) {
                 return hexToRgba(colorStr);
             }
-            return null; // RGBAは変換しない
+            return null;
         };
     } else {
         // HEXへの一括置換の場合：透明度付きRGBAのみを変換
@@ -358,55 +264,101 @@ function smartAutoConvertColors(text) {
     return convertAndReplaceColors(text, converter);
 }
 
-// 選択テキストを変換するヘルパー関数（複数カラーコード対応）
-function convertSelection(editor, converter) {
-    const selectedRanges = editor.selectedRanges;
-    if (selectedRanges.length === 0) {
-        nova.workspace.showErrorMessage("テキストが選択されていません");
-        return;
-    }
+// スマートHEX変換のテストケース
+const smartHexTestCases = [
+    // RGBAが多い場合：透明度付きRGBAのみ変換
+    {
+        input: "color: rgba(255, 0, 0, 0.5); background: rgba(0, 255, 0, 0.8); border: #0000ff; outline: rgb(255, 255, 255);",
+        expected: "color: #ff000080; background: #00ff00cc; border: #0000ff; outline: rgb(255, 255, 255);",
+        description: "RGBAが多い → 透明度付きRGBAのみHEXに変換、RGBとHEXは保持"
+    },
     
-    editor.edit((edit) => {
-        // 選択範囲を逆順に処理して位置がずれないようにする
-        for (const range of selectedRanges.reverse()) {
-            const selectedText = editor.getTextInRange(range);
-            
-            // 自動変換コマンドの場合はスマート変換を使用
-            let convertedText;
-            if (converter === autoConvertColor) {
-                convertedText = smartAutoConvertColors(selectedText);
-            } else {
-                // スマート抽出機能を使用してカラーコードを変換
-                convertedText = convertAndReplaceColors(selectedText, converter);
-            }
-            
-            if (convertedText) {
-                edit.replace(range, convertedText);
-            } else {
-                // 従来の方法でフォールバック
-                const fallbackConverted = converter(selectedText);
-                if (fallbackConverted) {
-                    edit.replace(range, fallbackConverted);
-                } else {
-                    nova.workspace.showWarningMessage(`選択範囲内に有効なカラーコードが見つかりませんでした`);
-                }
-            }
-        }
-    });
+    // RGBとHEX混在：RGBは変換しない
+    {
+        input: "color: rgb(255, 0, 0); background: #00ff00; border: rgb(0, 0, 255); outline: #ffffff;",
+        expected: "color: rgb(255, 0, 0); background: #00ff00; border: rgb(0, 0, 255); outline: #ffffff;",
+        description: "RGBとHEXのみ → 変換なし（透明度がないため）"
+    },
+    
+    // 透明度付きRGBAが多い
+    {
+        input: "color: rgba(255, 0, 0, 0.3); background: rgba(0, 255, 0, 0.7); border: rgba(0, 0, 255, 0.9); outline: #ffffff;",
+        expected: "color: #ff00004d; background: #00ff00b3; border: #0000ffe6; outline: #ffffff;",
+        description: "透明度付きRGBAが多い → すべてHEXに変換"
+    },
+    
+    // 複雑な混在
+    {
+        input: ".header { color: rgba(255, 0, 0, 0.5); background: #343a40; }\n.nav { border: rgba(0, 255, 0, 0.8); outline: rgb(255, 255, 255); }",
+        expected: ".header { color: #ff000080; background: #343a40; }\n.nav { border: #00ff00cc; outline: rgb(255, 255, 255); }",
+        description: "複雑な混在 → 透明度付きRGBAのみ変換"
+    },
+    
+    // すべてRGBの場合
+    {
+        input: "color: rgb(255, 0, 0); background: rgb(0, 255, 0); border: rgb(0, 0, 255);",
+        expected: "color: rgb(255, 0, 0); background: rgb(0, 255, 0); border: rgb(0, 0, 255);",
+        description: "すべてRGB → 変換なし"
+    },
+    
+    // すべてHEXの場合
+    {
+        input: "color: #ff0000; background: #00ff00; border: #0000ff;",
+        expected: "color: #ff0000; background: #00ff00; border: #0000ff;",
+        description: "すべてHEX → 変換なし"
+    },
+    
+    // 透明度0.0と1.0のRGBA
+    {
+        input: "color: rgba(255, 0, 0, 0.0); background: rgba(0, 255, 0, 1.0); border: rgba(0, 0, 255, 0.5);",
+        expected: "color: #00000000; background: rgb(0, 255, 0); border: #0000ff80;",
+        description: "透明度0.0と1.0 → 0.0は変換、1.0はRGB形式なので変換なし"
+    }
+];
+
+console.log("=== スマートHEX変換テスト ===\n");
+
+let passed = 0;
+let failed = 0;
+
+smartHexTestCases.forEach((testCase, index) => {
+    const result = smartAutoConvertColors(testCase.input);
+    const success = result === testCase.expected;
+    
+    // カラー分析を表示
+    const colorCodes = extractColorCodes(testCase.input);
+    const direction = analyzeColorUsage(colorCodes);
+    
+    console.log(`${index + 1}. ${testCase.description}`);
+    console.log(`   入力: ${testCase.input.replace(/\n/g, '\\n')}`);
+    console.log(`   期待値: ${testCase.expected.replace(/\n/g, '\\n')}`);
+    console.log(`   結果: ${result ? result.replace(/\n/g, '\\n') : 'null'}`);
+    console.log(`   分析: HEX=${colorCodes.filter(c => /^#?[a-f\d]{3,8}$/.test(c.text)).length}, RGBA=${colorCodes.filter(c => /rgba?\s*\(/i.test(c.text)).length}, RGB=${colorCodes.filter(c => /rgb\s*\(/i.test(c.text)).length}`);
+    console.log(`   方向: ${direction}`);
+    console.log(`   状態: ${success ? "✅ パス" : "❌ 失敗"}`);
+    console.log("");
+    
+    if (success) {
+        passed++;
+    } else {
+        failed++;
+    }
+});
+
+console.log(`=== テスト結果 ===`);
+console.log(`パス: ${passed}`);
+console.log(`失敗: ${failed}`);
+console.log(`合計: ${passed + failed}`);
+
+console.log("\n=== スマートHEX変換のルール ===");
+console.log("• HEXへの一括置換時：透明度付きRGBAのみ変換");
+console.log("• RGB（透明度なし）は変換しない");
+console.log("• 純粋なHEXは変換しない");
+console.log("• エラーを防ぎ、既存のHEXを保護");
+
+if (failed === 0) {
+    console.log("\n🎉 すべてのテストがパスしました！");
+    console.log("✅ スマートHEX変換が安全に動作します");
+} else {
+    console.log(`\n⚠️  ${failed}件のテストが失敗しました。`);
 }
-
-// コマンド登録
-nova.commands.register("convertRgbaToHex", (editor) => {
-    convertSelection(editor, rgbaToHex);
-});
-
-nova.commands.register("convertHexToRgba", (editor) => {
-    convertSelection(editor, hexToRgba);
-});
-
-nova.commands.register("autoConvertColor", (editor) => {
-    convertSelection(editor, autoConvertColor);
-});
-
-// 拡張機能が有効になったときの処理
-console.log("RGBA/HEX Color Converter拡張機能が読み込まれました");

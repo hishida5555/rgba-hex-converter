@@ -309,8 +309,14 @@ function smartAutoConvertColors(text) {
             return null; // RGBAは変換しない
         };
     } else {
+        // HEXへの一括置換の場合：透明度付きRGBAのみを変換
         converter = (colorStr) => {
             if (/rgba?\s*\(/i.test(colorStr)) {
+                // RGB（透明度なし）は変換しない
+                if (/rgb\s*\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)/i.test(colorStr)) {
+                    return null;
+                }
+                // RGBA（透明度あり）のみを変換
                 return rgbaToHex(colorStr);
             }
             return null; // HEXは変換しない
