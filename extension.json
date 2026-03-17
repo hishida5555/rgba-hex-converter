@@ -1,12 +1,12 @@
 {
   "identifier": "p53d.rgba-hex-converter",
   "name": "RGBA/HEX Color Converter",
-  "vendor": "p53*design",
+  "organization": "p53*design",
   "description": "エディタ内でRGBAとHEXカラーコードを相互変換する機能拡張",
   "version": "1.0.0",
   "categories": ["commands"],
   "entitlements": ["clipboard"],
-  "main": "main.js",
+  "main": "Scripts/main.js",
   "commands": {
     "editor": [
       {

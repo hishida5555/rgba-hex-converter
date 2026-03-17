@@ -6,7 +6,7 @@
     "version": "1.0.0",
     "categories": ["commands"],
     "entitlements": ["clipboard"],
-    "main": "main.js",
+    "main": "Scripts/main.js",
     "commands": {
         "editor": [
             {

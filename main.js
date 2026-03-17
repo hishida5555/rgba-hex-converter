@@ -207,11 +207,11 @@ function hexToRgba(hexStr) {
     }
 }
 
-// カラー形式を自動検出して変換する関数（使用量が多い形式に統一）
+// カラー形式を自動検出して変換する関数（単一カラーコード用フォールバック）
 function autoConvertColor(colorStr) {
     const trimmed = colorStr.trim();
     
-    if (/^#?[a-f\d]{3,6}\s*[-,\s]\s*\d+%$/i.test(trimmed)) {
+    if (HEX_PERCENT_PATTERN.test(trimmed)) {
         return hexPercentToRgba(trimmed);
     }
     
@@ -219,11 +219,11 @@ function autoConvertColor(colorStr) {
         return rgbaToHex(trimmed);
     }
     
-    if (/^#?[a-f\d]{3,8}$/i.test(trimmed)) {
+    if (/^#[a-f\d]{3}(?:[a-f\d]{3})?(?:[a-f\d]{2})?$/i.test(trimmed)) {
         return hexToRgba(trimmed);
     }
     
-    return null; // どちらの形式でもない場合
+    return null;
 }
 
 // 複数カラーコードの使用量を分析して、最適な変換方向を決定
@@ -263,7 +263,7 @@ function analyzeColorUsage(colorCodes) {
     }
 }
 
-// カラーコードを変換して置換する関数（複数対応、使用量ベースの自動判定）
+// カラーコードを変換して置換する関数（複数対応）
 function convertAndReplaceColors(text, converter) {
     const colorCodes = extractColorCodes(text);
     
@@ -314,7 +314,7 @@ function smartAutoConvertColors(text) {
             if (HEX_PERCENT_PATTERN.test(colorStr)) {
                 // HEX+パーセント → RGBA
                 return hexPercentToRgba(colorStr);
-            } else if (/^#?[a-f\d]{3,8}$/i.test(colorStr)) {
+            } else if (/^#[a-f\d]{3}(?:[a-f\d]{3})?(?:[a-f\d]{2})?$/i.test(colorStr)) {
                 // HEX → RGBA
                 return hexToRgba(colorStr);
             }
@@ -330,14 +330,34 @@ function smartAutoConvertColors(text) {
                     return rgbaToHex(rgbaResult);
                 }
             } else if (/rgba?\s*\(/i.test(colorStr)) {
-                // RGBもHEXに変換する
+                // RGB/RGBAをHEXに変換する
                 return rgbaToHex(colorStr);
             }
             return null; // 純粋なHEXは変換しない
         };
     }
     
-    return convertAndReplaceColors(text, converter);
+    // extractColorCodesは既に取得済みなので直接置換処理を行う
+    let result = text;
+    let offset = 0;
+    for (let i = 0; i < colorCodes.length; i++) {
+        const color = colorCodes[i];
+        const actualIndex = color.index + offset;
+        const actualText = result.substring(actualIndex, actualIndex + color.length);
+        
+        if (actualText === color.text) {
+            const convertedColor = converter(color.text);
+            
+            if (convertedColor && convertedColor !== color.text) {
+                const before = result.substring(0, actualIndex);
+                const after = result.substring(actualIndex + color.length);
+                result = before + convertedColor + after;
+                offset += convertedColor.length - color.length;
+            }
+        }
+    }
+    
+    return result === text ? null : result;
 }
 
 // 選択テキストを変換するヘルパー関数（複数カラーコード対応）
@@ -396,7 +416,41 @@ function convertSelection(editor, converter) {
     });
 }
 
-// コマンド登録
+// クリップボード内のカラーコードを変換する関数
+async function convertClipboardColor(conversionType) {
+    const clipboardText = await nova.clipboard.readText();
+    
+    if (!clipboardText) {
+        nova.workspace.showErrorMessage("クリップボードが空です");
+        return;
+    }
+    
+    const trimmedText = clipboardText.trim();
+    let convertedText;
+    
+    switch (conversionType) {
+        case 'rgba-to-hex':
+            convertedText = rgbaToHex(trimmedText) || (HEX_PERCENT_PATTERN.test(trimmedText) ? rgbaToHex(hexPercentToRgba(trimmedText)) : null);
+            break;
+        case 'hex-to-rgba':
+            convertedText = hexToRgba(trimmedText) || (HEX_PERCENT_PATTERN.test(trimmedText) ? hexPercentToRgba(trimmedText) : null);
+            break;
+        case 'auto':
+            convertedText = smartAutoConvertColors(trimmedText) || autoConvertColor(trimmedText);
+            break;
+        default:
+            return;
+    }
+    
+    if (convertedText) {
+        await nova.clipboard.writeText(convertedText);
+        nova.workspace.showInformativeMessage(`クリップボードを変換しました: ${trimmedText} → ${convertedText}`);
+    } else {
+        nova.workspace.showWarningMessage(`"${trimmedText}" は有効なカラーコードではありません`);
+    }
+}
+
+// エディタ用コマンド登録
 nova.commands.register("convertRgbaToHex", (editor) => {
     convertSelection(editor, rgbaToHex);
 });
@@ -407,6 +461,19 @@ nova.commands.register("convertHexToRgba", (editor) => {
 
 nova.commands.register("autoConvertColor", (editor) => {
     convertSelection(editor, autoConvertColor);
+});
+
+// クリップボード用コマンド登録
+nova.commands.register("convertClipboardRgbaToHex", async () => {
+    await convertClipboardColor('rgba-to-hex');
+});
+
+nova.commands.register("convertClipboardHexToRgba", async () => {
+    await convertClipboardColor('hex-to-rgba');
+});
+
+nova.commands.register("convertClipboardAuto", async () => {
+    await convertClipboardColor('auto');
 });
 
 // 拡張機能が有効になったときの処理
