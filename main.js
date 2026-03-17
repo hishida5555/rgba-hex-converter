@@ -235,26 +235,121 @@ function hexToRgba(hexStr) {
     }
 }
 
-// カラー形式を自動検出して変換する関数
+// カラー形式を自動検出して変換する関数（使用量が多い形式に統一）
 function autoConvertColor(colorStr) {
     const trimmed = colorStr.trim();
     
-    // HEX+パーセント形式かチェック（#ff0000-50%, #ff0000 50%, #ff0000,50%）
     if (/^#?[a-f\d]{3,6}\s*[-,\s]\s*\d+%$/i.test(trimmed)) {
         return hexPercentToRgba(trimmed);
     }
     
-    // RGBA形式かチェック
     if (/rgba?\s*\(/i.test(trimmed)) {
         return rgbaToHex(trimmed);
     }
     
-    // HEX形式かチェック
     if (/^#?[a-f\d]{3,8}$/i.test(trimmed)) {
         return hexToRgba(trimmed);
     }
     
     return null; // どちらの形式でもない場合
+}
+
+// 複数カラーコードの使用量を分析して、最適な変換方向を決定
+function analyzeColorUsage(colorCodes) {
+    let hexCount = 0;
+    let rgbaCount = 0;
+    let hexPercentCount = 0;
+    
+    colorCodes.forEach(color => {
+        if (/^#?[a-f\d]{3,6}\s*[-,\s]\s*\d+%$/i.test(color.text)) {
+            hexPercentCount++;
+        } else if (/rgba?\s*\(/i.test(color.text)) {
+            rgbaCount++;
+        } else if (/^#?[a-f\d]{3,8}$/i.test(color.text)) {
+            hexCount++;
+        }
+    });
+    
+    // HEX+パーセント形式はHEXとしてカウント
+    const totalHex = hexCount + hexPercentCount;
+    const totalRgba = rgbaCount;
+    
+    console.log(`カラー形式分析: HEX=${totalHex}, RGBA=${totalRgba}, HEX+パーセント=${hexPercentCount}`);
+    
+    // 使用量が多い形式を返す
+    if (totalHex > totalRgba) {
+        return 'to-rgba'; // HEXが多い → RGBAに統一
+    } else if (totalRgba > totalHex) {
+        return 'to-hex';   // RGBAが多い → HEXに統一
+    } else {
+        return 'to-rgba'; // 同数の場合はRGBAに統一（一般的に使いやすい）
+    }
+}
+
+// カラーコードを変換して置換する関数（複数対応、使用量ベースの自動判定）
+function convertAndReplaceColors(text, converter) {
+    const colorCodes = extractColorCodes(text);
+    
+    if (colorCodes.length === 0) {
+        return null;
+    }
+    
+    let result = text;
+    
+    // 前から処理し、位置を再計算
+    let offset = 0;
+    for (let i = 0; i < colorCodes.length; i++) {
+        const color = colorCodes[i];
+        const actualIndex = color.index + offset;
+        const actualText = result.substring(actualIndex, actualIndex + color.length);
+        
+        // 実際のテキストがまだ変換されていないことを確認
+        if (actualText === color.text) {
+            const convertedColor = converter(color.text);
+            
+            if (convertedColor && convertedColor !== color.text) {
+                const before = result.substring(0, actualIndex);
+                const after = result.substring(actualIndex + color.length);
+                result = before + convertedColor + after;
+                offset += convertedColor.length - color.length;
+            }
+        }
+    }
+    
+    return result === text ? null : result;
+}
+
+// スマート自動変換関数（使用量が多い形式に統一）
+function smartAutoConvertColors(text) {
+    const colorCodes = extractColorCodes(text);
+    
+    if (colorCodes.length === 0) {
+        return null;
+    }
+    
+    // 使用量を分析して変換方向を決定
+    const conversionDirection = analyzeColorUsage(colorCodes);
+    
+    let converter;
+    if (conversionDirection === 'to-rgba') {
+        converter = (colorStr) => {
+            if (/^#?[a-f\d]{3,6}\s*[-,\s]\s*\d+%$/i.test(colorStr)) {
+                return hexPercentToRgba(colorStr);
+            } else if (/^#?[a-f\d]{3,8}$/i.test(colorStr)) {
+                return hexToRgba(colorStr);
+            }
+            return null; // RGBAは変換しない
+        };
+    } else {
+        converter = (colorStr) => {
+            if (/rgba?\s*\(/i.test(colorStr)) {
+                return rgbaToHex(colorStr);
+            }
+            return null; // HEXは変換しない
+        };
+    }
+    
+    return convertAndReplaceColors(text, converter);
 }
 
 // 選択テキストを変換するヘルパー関数（複数カラーコード対応）
@@ -270,8 +365,14 @@ function convertSelection(editor, converter) {
         for (const range of selectedRanges.reverse()) {
             const selectedText = editor.getTextInRange(range);
             
-            // スマート抽出機能を使用してカラーコードを変換
-            const convertedText = convertAndReplaceColors(selectedText, converter);
+            // 自動変換コマンドの場合はスマート変換を使用
+            let convertedText;
+            if (converter === autoConvertColor) {
+                convertedText = smartAutoConvertColors(selectedText);
+            } else {
+                // スマート抽出機能を使用してカラーコードを変換
+                convertedText = convertAndReplaceColors(selectedText, converter);
+            }
             
             if (convertedText) {
                 edit.replace(range, convertedText);
