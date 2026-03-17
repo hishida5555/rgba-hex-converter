@@ -42,10 +42,20 @@ Editorメニューから変換コマンドを選択：
 
 ## インストール方法
 
-1. このリポジトリをクローンまたはダウンロード
-2. Novaのメニューから `Extensions > Extension Library` を開く
-3. 右下の `+` ボタンをクリックして `Install Extension from Folder...` を選択
-4. このフォルダを選択してインストール
+### 開発モードでのテスト
+1. Novaを起動
+2. `File > Open` でこのフォルダを開く
+3. `Extensions > Activate Project as Extension` を選択
+4. 拡張機能が有効化される
+
+### Nova CLIを使用（推奨）
+```bash
+nova install /path/to/rgba-hex-NovaExtension
+```
+
+### 本番インストール
+1. 拡張機能を `.novaextension` バンドルとしてエクスポート
+2. Extension Libraryからインストール
 
 ## 開発
 

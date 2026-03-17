@@ -2,17 +2,21 @@
 
 ## 🧪 テスト準備
 
-### 1. 拡張機能のインストール
+### 1. 拡張機能の有効化（開発モード）
 1. Novaを起動
-2. メニューから `Extensions > Extension Library` を選択
-3. 右下の `+` ボタンをクリック
-4. `Install Extension from Folder...` を選択
-5. `/Volumes/WorkSSD/Windsurf/rgba-hex-NovaExtension` フォルダを選択
-6. インストール完了を確認
+2. `File > Open` で `/Volumes/WorkSSD/Windsurf/rgba-hex-NovaExtension` フォルダを開く
+3. メニューから `Extensions > Activate Project as Extension` を選択
+4. 拡張機能が有効化されたことを確認
 
 ### 2. 拡張機能の有効化確認
-- `Extensions > Extension Library` に「RGBA/HEX Color Converter」が表示されていることを確認
-- ステータスが「Enabled」であることを確認
+- `Extensions` メニューに「Deactivate Project as Extension」が表示されていることを確認
+- Editorメニューに変換コマンドが表示されていることを確認
+
+### 3. （代替方法）Nova CLIを使用
+```bash
+# Nova CLIがインストールされている場合
+nova install /Volumes/WorkSSD/Windsurf/rgba-hex-NovaExtension
+```
 
 ## 🎯 テストケース
 
