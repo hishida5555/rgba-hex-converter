@@ -1,7 +1,7 @@
 {
-  "identifier": "com.example.rgba-hex-converter",
+  "identifier": "p53d.rgba-hex-converter",
   "name": "RGBA/HEX Color Converter",
-  "vendor": "Example Developer",
+  "vendor": "p53*design",
   "description": "エディタ内でRGBAとHEXカラーコードを相互変換する機能拡張",
   "version": "1.0.0",
   "categories": ["commands"],

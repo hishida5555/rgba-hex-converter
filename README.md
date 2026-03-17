@@ -59,6 +59,8 @@ nova install /path/to/rgba-hex-NovaExtension
 
 ## 開発
 
+- **Vendor**: p53*design
+- **Identifier**: p53d.rgba-hex-converter
 - `extension.json`: 拡張機能のマニフェストファイル
 - `main.js`: メインの変換ロジック
 
