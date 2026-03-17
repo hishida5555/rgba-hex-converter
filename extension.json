@@ -5,6 +5,7 @@
   "description": "エディタ内でRGBAとHEXカラーコードを相互変換する機能拡張",
   "version": "1.0.0",
   "categories": ["commands"],
+  "entitlements": ["clipboard"],
   "main": "main.js",
   "commands": {
     "editor": [
@@ -25,6 +26,23 @@
         "command": "autoConvertColor",
         "shortcut": "ctrl-cmd-c",
         "when": "editorHasFocus && editorHasSelection"
+      }
+    ],
+    "extensions": [
+      {
+        "title": "クリップボードのRGBAをHEXに変換",
+        "command": "convertClipboardRgbaToHex",
+        "shortcut": "ctrl-cmd-shift-h"
+      },
+      {
+        "title": "クリップボードのHEXをRGBAに変換",
+        "command": "convertClipboardHexToRgba", 
+        "shortcut": "ctrl-cmd-shift-r"
+      },
+      {
+        "title": "クリップボードのカラーを自動変換",
+        "command": "convertClipboardAuto",
+        "shortcut": "ctrl-cmd-shift-c"
       }
     ]
   }
