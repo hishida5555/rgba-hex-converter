@@ -358,8 +358,27 @@ function convertSelection(editor, converter) {
             if (converter === autoConvertColor) {
                 convertedText = smartAutoConvertColors(selectedText);
             } else {
+                // HEX+パーセント形式を考慮したコンバーターを作成
+                const enhancedConverter = (colorStr) => {
+                    // HEX+パーセント形式の場合
+                    if (HEX_PERCENT_PATTERN.test(colorStr)) {
+                        if (converter === rgbaToHex) {
+                            // HEX+パーセント → RGBA → HEX
+                            const rgbaResult = hexPercentToRgba(colorStr);
+                            if (rgbaResult) {
+                                return rgbaToHex(rgbaResult);
+                            }
+                        } else if (converter === hexToRgba) {
+                            // HEX+パーセント → RGBA
+                            return hexPercentToRgba(colorStr);
+                        }
+                    }
+                    // 通常の変換
+                    return converter(colorStr);
+                };
+                
                 // スマート抽出機能を使用してカラーコードを変換
-                convertedText = convertAndReplaceColors(selectedText, converter);
+                convertedText = convertAndReplaceColors(selectedText, enhancedConverter);
             }
             
             if (convertedText) {
