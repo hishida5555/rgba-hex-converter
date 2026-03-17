@@ -309,7 +309,7 @@ function smartAutoConvertColors(text) {
             return null; // RGBAは変換しない
         };
     } else {
-        // HEXへの一括置換の場合：透明度付きRGBAのみを変換
+        // HEXへの一括置換の場合：透明度付きRGBAとHEX+パーセントを変換
         converter = (colorStr) => {
             if (/rgba?\s*\(/i.test(colorStr)) {
                 // RGB（透明度なし）は変換しない
@@ -318,8 +318,14 @@ function smartAutoConvertColors(text) {
                 }
                 // RGBA（透明度あり）のみを変換
                 return rgbaToHex(colorStr);
+            } else if (/^#?[a-f\d]{3,6}\s*[-,\s]\s*\d+%$/i.test(colorStr)) {
+                // HEX+パーセント形式もRGBAに変換してからHEXに変換
+                const rgbaResult = hexPercentToRgba(colorStr);
+                if (rgbaResult) {
+                    return rgbaToHex(rgbaResult);
+                }
             }
-            return null; // HEXは変換しない
+            return null; // 純粋なHEXは変換しない
         };
     }
     
