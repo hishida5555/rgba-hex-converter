@@ -1,0 +1,19 @@
+{
+    "Convert between RGBA and HEX color codes in the editor": "エディタ内でRGBAとHEXカラーコードを相互変換する機能拡張",
+
+    "Enable Clipboard Conversion (Experimental)": "クリップボード変換を有効にする（テスト機能）",
+    "When enabled, allows direct conversion of color codes in the clipboard. Disabled by default for security reasons.": "有効にすると、クリップボード内のカラーコードを直接変換する機能が使えるようになります。セキュリティ上の配慮からデフォルトでは無効です。",
+
+    "Convert RGBA to HEX": "RGBAをHEXに変換",
+    "Convert HEX to RGBA": "HEXをRGBAに変換",
+    "Auto-detect and Convert Color Format": "カラー形式を自動検出して変換",
+
+    "Clipboard: Convert RGBA to HEX": "クリップボードのRGBAをHEXに変換",
+    "Clipboard: Convert HEX to RGBA": "クリップボードのHEXをRGBAに変換",
+    "Clipboard: Auto-convert Color": "クリップボードのカラーを自動変換",
+
+    "No text is selected.": "テキストが選択されていません。",
+    "No valid color codes found in the selection.": "選択範囲内に有効なカラーコードが見つかりませんでした。",
+    "Clipboard conversion is an experimental feature and is disabled by default for security reasons. Please enable it in the extension settings.": "クリップボード変換はテスト機能であり、セキュリティ上の配慮からデフォルトでは無効です。拡張機能の設定から有効にしてください。",
+    "The clipboard is empty.": "クリップボードが空です。"
+}

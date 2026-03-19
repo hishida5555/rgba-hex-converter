@@ -1,5 +1,5 @@
-// RGBA/HEX カラーコード変換拡張機能
-// Panic Nova用
+// RGBA/HEX Color Converter Extension
+// for Panic Nova
 
 // 共通の正規表現パターン
 const HEX_PERCENT_PATTERN = /^#?([a-f\d]{3}|[a-f\d]{6})\s*[-,\s]\s*(\d+)%$/i;
@@ -364,7 +364,7 @@ function smartAutoConvertColors(text) {
 function convertSelection(editor, converter) {
     const selectedRanges = editor.selectedRanges;
     if (selectedRanges.length === 0) {
-        nova.workspace.showErrorMessage("テキストが選択されていません");
+        nova.workspace.showErrorMessage(nova.localize("No text is selected.", "No text is selected."));
         return;
     }
     
@@ -409,7 +409,7 @@ function convertSelection(editor, converter) {
                 if (fallbackConverted) {
                     edit.replace(range, fallbackConverted);
                 } else {
-                    nova.workspace.showWarningMessage(`選択範囲内に有効なカラーコードが見つかりませんでした`);
+                    nova.workspace.showWarningMessage(nova.localize("No valid color codes found in the selection.", "No valid color codes found in the selection."));
                 }
             }
         }
@@ -421,7 +421,7 @@ async function convertClipboardColor(conversionType) {
     // 設定でクリップボード変換が無効の場合はクリップボードにアクセスせず終了
     const isEnabled = nova.config.get("p53d.rgba-hex-converter.enableClipboardCommands");
     if (!isEnabled) {
-        nova.workspace.showWarningMessage("クリップボード変換はテスト機能です。拡張機能の設定から有効にしてください。");
+        nova.workspace.showWarningMessage(nova.localize("Clipboard conversion is an experimental feature and is disabled by default for security reasons. Please enable it in the extension settings.", "Clipboard conversion is an experimental feature and is disabled by default for security reasons. Please enable it in the extension settings."));
         return;
     }
     
@@ -429,7 +429,7 @@ async function convertClipboardColor(conversionType) {
         const clipboardText = await nova.clipboard.readText();
         
         if (!clipboardText || clipboardText === '' || (typeof clipboardText === 'string' && clipboardText.trim() === '')) {
-            nova.workspace.showErrorMessage("クリップボードが空です");
+            nova.workspace.showErrorMessage(nova.localize("The clipboard is empty.", "The clipboard is empty."));
             return;
         }
         
@@ -452,12 +452,12 @@ async function convertClipboardColor(conversionType) {
         
         if (convertedText) {
             await nova.clipboard.writeText(convertedText);
-            nova.workspace.showInformativeMessage(`クリップボードを変換しました: ${trimmedText} → ${convertedText}`);
+            nova.workspace.showInformativeMessage(`${trimmedText} → ${convertedText}`);
         } else {
-            nova.workspace.showWarningMessage(`"${trimmedText}" は有効なカラーコードではありません`);
+            nova.workspace.showWarningMessage(`"${trimmedText}" is not a valid color code.`);
         }
     } catch (error) {
-        nova.workspace.showErrorMessage(`クリップボード操作エラー: ${error.message}`);
+        nova.workspace.showErrorMessage(`Clipboard error: ${error.message}`);
     }
 }
 
@@ -488,4 +488,4 @@ nova.commands.register("convertClipboardAuto", async () => {
 });
 
 // 拡張機能が有効になったときの処理
-console.log("RGBA/HEX Color Converter拡張機能が読み込まれました");
+console.log("RGBA/HEX Color Converter extension loaded");

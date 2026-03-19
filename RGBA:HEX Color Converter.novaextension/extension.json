@@ -2,7 +2,7 @@
     "identifier": "p53d.rgba-hex-converter",
     "name": "RGBA/HEX Color Converter",
     "organization": "p53*design",
-    "description": "エディタ内でRGBAとHEXカラーコードを相互変換する機能拡張",
+    "description": "Convert between RGBA and HEX color codes in the editor",
     "version": "1.0.0",
     "categories": ["commands"],
     "entitlements": {
@@ -12,8 +12,8 @@
     "config": [
         {
             "key": "p53d.rgba-hex-converter.enableClipboardCommands",
-            "title": "クリップボード変換を有効にする（テスト機能）",
-            "description": "有効にすると、クリップボード内のカラーコードを直接変換する機能が使えるようになります。",
+            "title": "Enable Clipboard Conversion (Experimental)",
+            "description": "When enabled, allows direct conversion of color codes in the clipboard. Disabled by default for security reasons.",
             "type": "boolean",
             "default": false
         }
@@ -21,19 +21,19 @@
     "commands": {
         "editor": [
             {
-                "title": "RGBAをHEXに変換",
+                "title": "Convert RGBA to HEX",
                 "command": "convertRgbaToHex",
                 "shortcut": "ctrl-cmd-h",
                 "when": "editorHasFocus && editorHasSelection"
             },
             {
-                "title": "HEXをRGBAに変換", 
+                "title": "Convert HEX to RGBA",
                 "command": "convertHexToRgba",
                 "shortcut": "ctrl-cmd-r",
                 "when": "editorHasFocus && editorHasSelection"
             },
             {
-                "title": "カラー形式を自動検出して変換",
+                "title": "Auto-detect and Convert Color Format",
                 "command": "autoConvertColor",
                 "shortcut": "ctrl-cmd-c",
                 "when": "editorHasFocus && editorHasSelection"
@@ -41,17 +41,17 @@
         ],
         "extensions": [
             {
-                "title": "クリップボードのRGBAをHEXに変換",
+                "title": "Clipboard: Convert RGBA to HEX",
                 "command": "convertClipboardRgbaToHex",
                 "shortcut": "ctrl-cmd-shift-h"
             },
             {
-                "title": "クリップボードのHEXをRGBAに変換",
-                "command": "convertClipboardHexToRgba", 
+                "title": "Clipboard: Convert HEX to RGBA",
+                "command": "convertClipboardHexToRgba",
                 "shortcut": "ctrl-cmd-shift-r"
             },
             {
-                "title": "クリップボードのカラーを自動変換",
+                "title": "Clipboard: Auto-convert Color",
                 "command": "convertClipboardAuto",
                 "shortcut": "ctrl-cmd-shift-c"
             }

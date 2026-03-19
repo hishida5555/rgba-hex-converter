@@ -1,60 +1,85 @@
-# RGBA/HEX Color Converter for Nova
+# RGBA/HEX Color Converter
 
-Panic Novaエディタ上で、RGBA（RGB）とHEXカラーコードをシームレスに相互変換する拡張機能です。
+A Nova extension for converting between RGBA and HEX color codes.
 
-## 主な機能
+## Features
+
+- **RGBA → HEX**: `rgba(255, 0, 0, 0.5)` → `#ff000080`
+- **HEX → RGBA**: `#ff0000` → `rgb(255, 0, 0)`
+- **HEX + %**: `#ff0000 50%` → `rgba(255, 0, 0, 0.50)`
+- **Smart auto-convert**: Analyzes color formats in the selection and unifies them to the majority format.
+
+## Usage
+
+Select one or more color codes in the editor, then run a command via shortcut or menu. Multiple selections are supported.
+
+| Shortcut | Command |
+|---|---|
+| `⌃ ⌘ H` | Convert RGBA to HEX |
+| `⌃ ⌘ R` | Convert HEX to RGBA |
+| `⌃ ⌘ C` | Auto-detect and convert |
+
+Commands are also available from the **Editor** menu or the Command Palette (`⇧ ⌘ P`).
+
+### Clipboard Conversion (Experimental)
+
+Converts color codes stored in the clipboard directly. This feature is **disabled by default** for security reasons, and must be enabled in the extension settings.
+
+
+| Shortcut | Command |
+|---|---|
+| `⌃ ⇧ ⌘ H` | Clipboard RGBA → HEX |
+| `⌃ ⇧ ⌘ R` | Clipboard HEX → RGBA |
+| `⌃ ⇧ ⌘ C` | Clipboard auto-convert |
+
+## Supported Formats
+
+| Format | Examples |
+|---|---|
+| RGB / RGBA | `rgb(255, 0, 0)`, `rgba(255, 0, 0, 0.5)` |
+| HEX (6-digit) | `#ff0000` |
+| HEX (3-digit) | `#f00` |
+| HEX (8-digit, with alpha) | `#ff000080` |
+| HEX (4-digit, with alpha) | `#f08a` |
+| HEX + % | `#ff0000 50%`, `#ff0000-75%`, `#f00,25%` |
+
+---
+
+## 日本語
+
+Nova用のRGBA/HEXカラーコード相互変換拡張機能です。
+
+### 機能
 
 - **RGBA → HEX変換**: `rgba(255, 0, 0, 0.5)` → `#ff000080`
 - **HEX → RGBA変換**: `#ff0000` → `rgb(255, 0, 0)`
-- **HEX+パーセント対応**: `#ff0000 50%` → `rgba(255, 0, 0, 0.50)` または `#ff000080`
-- **スマート自動変換**: 選択範囲内のカラーコード形式を分析し、最も使われている多数派の形式に一括で統一変換します。
+- **HEX+パーセント対応**: `#ff0000 50%` → `rgba(255, 0, 0, 0.50)`
+- **スマート自動変換**: 選択範囲内のカラー形式を分析し、多数派の形式に統一します。
 
-## 使い方（エディタ上の変換）
+### 使い方
 
-CSS/SCSSなどのファイル内でカラーコードを選択し、以下のいずれかの方法で変換を実行します。（複数選択にも対応しています）
+エディタ上でカラーコードを選択し、ショートカットまたはメニューからコマンドを実行します。複数選択に対応しています。
 
-### ⌨️ ショートカットキー
-
-- **`⌃ ⌘ H`** : RGBAをHEXに変換
-- **`⌃ ⌘ R`** : HEXをRGBAに変換
-- **`⌃ ⌘ C`** : カラー形式を自動検出して一括変換（多数派形式に統一）
-
-### 🖱️ メニューから
-
-エディタ上部のメニューから `Editor` → 該当のコマンドを選択します。  
-または、コマンドパレット（`⇧ ⌘ P`）を開いて「RGBA」や「HEX」と検索することで実行できます。
-
----
-
-## 📋 クリップボード変換（※テスト機能）
-
-クリップボードにコピーされているカラーコードテキストを直接変換するテスト機能です。
-メニューの `Extensions` または以下のショートカットで実行できます。
-
-> [!WARNING]
-> この機能は現在テスト用（ベータ版）として実装されています。予期せぬ動作をする可能性があります。
-
-- **`⌃ ⇧ ⌘ H`** : クリップボードのRGBAをHEXに変換
-- **`⌃ ⇧ ⌘ R`** : クリップボードのHEXをRGBAに変換
-- **`⌃ ⇧ ⌘ C`** : クリップボードのカラーを自動変換（テスト機能）
-
----
-
-## 対応フォーマット
-
-本拡張機能は、CSSで一般的に利用される以下の形式を網羅しています。アルファ値（透明度）を含めた変換に完全対応しています。
-
-| 形式 | 記述例 |
+| ショートカット | コマンド |
 |---|---|
-| **RGBA/RGB** | `rgb(255, 0, 0)`, `rgba(255, 0, 0, 0.5)` （スペース区切りも許容）|
-| **HEX (6桁)** | `#ff0000` |
-| **HEX (3桁)** | `#f00` |
-| **HEX (8桁)** | `#ff000080` （アルファ値付き）|
-| **HEX (4桁)** | `#f08a` （アルファ値付き）|
-| **HEX + %** | `#ff0000 50%`, `#ff0000-75%`, `#f00,25%` |
+| `⌃ ⌘ H` | RGBAをHEXに変換 |
+| `⌃ ⌘ R` | HEXをRGBAに変換 |
+| `⌃ ⌘ C` | 自動検出して変換 |
 
-## ライセンス
+**Editor** メニューまたはコマンドパレット（`⇧ ⌘ P`）からも実行できます。
 
-MIT License
+#### クリップボード変換（テスト機能）
 
-© p53*design
+クリップボード内のカラーコードを直接変換します。この機能はセキュリティ上の配慮から**デフォルトで無効**になっています。使用するには拡張機能の設定から有効にしてください。
+
+| ショートカット | コマンド |
+|---|---|
+| `⌃ ⇧ ⌘ H` | クリップボードのRGBAをHEXに変換 |
+| `⌃ ⇧ ⌘ R` | クリップボードのHEXをRGBAに変換 |
+| `⌃ ⇧ ⌘ C` | クリップボードのカラーを自動変換 |
+
+---
+
+## License
+
+MIT License © p53*design
