@@ -4,6 +4,8 @@
     "organization": "p53*design",
     "description": "Convert between RGBA and HEX color codes in the editor",
     "version": "1.0.0",
+    "repository": "https://github.com/hishida5555/rgba-hex-converter",
+    "bugs": "https://github.com/hishida5555/rgba-hex-converter/issues",
     "categories": ["commands"],
     "entitlements": {
         "clipboard": true
